@@ -18,31 +18,21 @@ module.exports = async (req, res, next) => {
 		return next(httpErrors(404, 'Врач не найден'));
 	}
 
-	const betweenDates = [
-		moment(moment(date)
-			.format('DD.MM.YYYY'))
-			.add('days', 1)
-			.utcOffset(0)
-			.set({ hours: 0, minutes: 0, seconds: 0 })
-			.toISOString(),
-		moment(moment(date)
-			.format('DD.MM.YYYY'))
-			.add('days', 1)
-			.utcOffset(0)
-			.set({ hours: 23, minutes: 59, seconds: 59 })
-			.toISOString(),
+	const betweenDate = [
+		moment(new Date(date).setHours(0,0,0,0)).format('YYYY-DD-MM HH:mm:ss'),
+		moment(new Date(date).setHours(23,59,59,59)).format('YYYY-DD-MM HH:mm:ss'),
 	];
 
 	const meetings = await meetingsModel.findAll({
 		where: {
 			doctor: doctor.id,
 			start: {
-				[Sequelize.Op.between]: betweenDates
+				[Sequelize.Op.between]: betweenDate
 			},
 			end: {
-				[Sequelize.Op.between]: betweenDates
+				[Sequelize.Op.between]: betweenDate
 			}
-		}
+		},
 	});
 
 	const banDates = meetings.map(item => `${ moment(item.start).format('DD.MM.YYYY') } ${ moment(item.start).add('hours', 1).format('HH:mm') } - ${ moment(item.end).add('hours', 1).format('HH:mm') }`);

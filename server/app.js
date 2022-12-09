@@ -3,26 +3,36 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 
+const cors = require('cors');
 const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
+const moment = require('moment-timezone');
 
 const meetingsModel = require(path.join(__dirname, 'models', 'meetings'));
 
 const app = express();
 const port = process.env.PORT || 4000;
 
+app.use(cors({
+	origin: [
+		'http://localhost:8080',
+		'https://localhost:8080'
+	],
+	credentials: true,
+}))
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(session({
 	resave: true,
 	saveUninitialized: true,
 	secret: process.env.SESSION_KEY,
-}));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
+}))
 require('./routes')(app);
 
 setInterval(async () => {
+	const ACCEPT_FORMAT = 'YYYY-MM-DD hh:mm:ss';
+
 	const todayMeetings = await meetingsModel.findAll({
 		include: [{
 			association: 'Doctor',
@@ -32,7 +42,7 @@ setInterval(async () => {
 			attributes: ['id', 'name'],
 		}],
 		where: {
-			start: moment().add('hours', 24).format('YYYY-DD-MM HH:mm:ss') + '+04'
+			start: moment().add('hours', 24).toISOString()
 		}
 	});
 

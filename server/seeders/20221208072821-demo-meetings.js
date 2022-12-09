@@ -2,7 +2,6 @@
 
 const path = require('path');
 const moment = require('moment-timezone');
-const Specializations = require(path.join(__dirname, '..', 'models', 'specializations'));
 const Doctors = require(path.join(__dirname, '..', 'models', 'doctors'));
 const Users = require(path.join(__dirname, '..', 'models', 'users'));
 const Meetings = require(path.join(__dirname, '..', 'models', 'meetings'));
@@ -10,7 +9,6 @@ const Meetings = require(path.join(__dirname, '..', 'models', 'meetings'));
 module.exports = {
 	async up (queryInterface, Sequelize) {
 		try {
-			const specializations = await Specializations.findAll();
 			const doctors = await Doctors.findAll({
 				limit: 1,
 			});
@@ -22,8 +20,8 @@ module.exports = {
 				doctor: doctors[0].id,
 				user: users[0].id,
 				happened: false,
-				start: moment().set({ minute: 0, seconds: 0 }).format(),
-				end: moment().set({ minute: 0, seconds: 0 }).add('hours', 1).format()
+				start: moment().set({ hours: 10, minutes: 0, seconds: 0 }).toDate(),
+				end: moment().set({ hours: 11, minutes: 0, seconds: 0 }).toDate()
 			}] : [];
 
 			await Promise.all(meetings.map((meeting) => Meetings.create(meeting)));

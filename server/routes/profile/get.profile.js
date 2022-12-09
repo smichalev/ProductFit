@@ -1,7 +1,7 @@
 const httpErrors = require('http-errors');
 
 module.exports = (req, res, next) => {
-	if (req && req.session && !req.session.user) {
+	if (!req.session.user) {
 		return next(httpErrors(401, 'Необходимо указать Ваши данные как пользователя'));
 	}
 

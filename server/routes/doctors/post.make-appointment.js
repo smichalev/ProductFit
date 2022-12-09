@@ -9,7 +9,7 @@ const Sequelize = require('sequelize');
 module.exports = async (req, res, next) => {
 	let { date, time, doctor } = req.body;
 
-	if (!req || !req.session || !req.session.user || !req.session.user) {
+	if (!req.session.user) {
 		return next(httpErrors(401, 'Только авторизованный пользователь может записываться на прием'));
 	}
 
@@ -17,7 +17,7 @@ module.exports = async (req, res, next) => {
 		return next(httpErrors(400, 'Некорректная дата'));
 	}
 
-	if (!time || !moment(time.split(' - ')[0], 'HH:mm', true).isValid() || !moment(time.split(' - ')[1], 'HH:mm', true).isValid()) {
+	if (!time) {
 		return next(httpErrors(400, 'Некорректное время'));
 	}
 
@@ -31,20 +31,22 @@ module.exports = async (req, res, next) => {
 		return next(httpErrors(400, 'Доктор не найден'));
 	}
 
-	const betweenDates = [
-		moment(date + ' ' + time.split(' - ')[0]).add('hours', 3).format('YYYY-DD-MM HH:mm:ss') + '+04',
-		moment(date + ' ' + time.split(' - ')[1]).add('hours', 3).format('YYYY-DD-MM HH:mm:ss') + '+04',
-	];
+	const startDate = moment(new Date(date).setHours(time.split(' - ')[0].split(':')[0],0,0,0)).format('YYYY-DD-MM HH:mm:ss');
+	const endDate = moment(new Date(date).setHours(time.split(' - ')[1].split(':')[0],0,0,0)).format('YYYY-DD-MM HH:mm:ss');
 
+	const betweenDate = [
+		startDate,
+		endDate
+	];
 
 	const meetingsList = await meetingsModel.findAll({
 		where: {
 			doctor,
 			start: {
-				[Sequelize.Op.between]: betweenDates
+				[Sequelize.Op.between]: betweenDate
 			},
 			end: {
-				[Sequelize.Op.between]: betweenDates
+				[Sequelize.Op.between]: betweenDate
 			}
 		}
 	});
@@ -56,8 +58,8 @@ module.exports = async (req, res, next) => {
 	const meetings = await meetingsModel.create({
 		doctor,
 		user: req.session.user.id,
-		start: betweenDates[0],
-		end: betweenDates[1]
+		start: moment(startDate).subtract('hours', 1),
+		end: moment(endDate).subtract('hours', 1)
 	});
 
 	res.status(201).json({ data: meetings });
